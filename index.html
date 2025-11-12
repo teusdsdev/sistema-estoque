@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Estoque - Câmera Simples</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eaeaea;
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.2em;
+            margin-bottom: 8px;
+        }
+        
+        .connection-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .tab-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .tab-button {
+            padding: 14px 8px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #495057;
+        }
+        
+        .tab-button.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .scanner-section {
+            text-align: center;
+            margin: 25px 0;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px dashed #dee2e6;
+        }
+        
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        #video {
+            width: 100%;
+            height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #000;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .scan-line {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background: #00ff00;
+            animation: scan 2s infinite linear;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        
+        @keyframes scan {
+            0% { top: 10%; }
+            50% { top: 90%; }
+            100% { top: 10%; }
+        }
+        
+        .camera-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            box-shadow: 0 7px 20px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            box-shadow: 0 7px 20px rgba(243, 156, 18, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .manual-input {
+            margin-top: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .product-list {
+            margin-top: 25px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .product-item {
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+        
+        .product-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        .message {
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .success { 
+            background: #d4edda; 
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error { 
+            background: #f8d7da; 
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .info { 
+            background: #d1ecf1; 
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .permission-guide {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            border-left: 4px solid #ffc107;
+        }
+
+        @media (max-width: 768px) {
+            .tab-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .camera-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 SISTEMA ESTOQUE COM CÂMERA</h1>
+            <p>Leitura por câmera + Google Sheets em tempo real</p>
+            <div id="connectionStatus" class="connection-status disconnected">
+                🔴 Verificando conexão...
+            </div>
+        </div>
+        
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="openTab('entrada')">📥 Entrada</button>
+            <button class="tab-button" onclick="openTab('saida')">📤 Saída</button>
+            <button class="tab-button" onclick="openTab('cadastro')">➕ Cadastrar</button>
+            <button class="tab-button" onclick="openTab('consulta')">🔍 Consultar</button>
+        </div>
+        
+        <!-- Tab Entrada -->
+        <div id="entrada" class="tab-content active">
+            <h2>📥 Entrada no Estoque</h2>
+            
+            <div class="scanner-section">
+                <h3>📷 Leitor por Câmera</h3>
+                
+                <div class="permission-guide">
+                    <strong>⚠️ Como usar:</strong><br>
+                    1. Clique em "Iniciar Câmera"<br>
+                    2. <strong>PERMITA</strong> o acesso à câmera quando o navegador solicitar<br>
+                    3. Aponte para o código<br>
+                    4. Clique em "Capturar Código"
+                </div>
+                
+                <div class="camera-container">
+                    <video id="videoEntrada" autoplay playsinline></video>
+                    <div class="camera-overlay">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button onclick="startCamera('entrada')" class="btn-success">🎥 Iniciar Câmera</button>
+                    <button onclick="stopCamera()" class="btn-danger">⏹️ Parar Câmera</button>
+                </div>
+                
+                <button onclick="captureCode('entrada')" class="btn-warning">📸 Capturar Código</button>
+                
+                <div class="manual-input">
+                    <label>🔢 Ou digite o código manualmente:</label>
+                    <input type="text" id="codigoEntrada" placeholder="Digite o código do produto" required>
+                    <button onclick="generateCode('entrada')" class="btn-warning">
+                        🎲 Gerar Código Teste
+                    </button>
+                </div>
+            </div>
+            
+            <form id="formEntrada">
+                <div class="form-group">
+                    <label for="quantidadeEntrada">📦 Quantidade:</label>
+                    <input type="number" id="quantidadeEntrada" required min="1" value="1">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span id="entradaText">📥 Registrar Entrada</span>
+                    <span id="entradaLoading" class="loading" style="display:none"></span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Tab Saída -->
+        <div id="saida" class="tab-content">
+            <h2>📤 Saída do Estoque</h2>
+            
+            <div class="scanner-section">
+                <h3>📷 Leitor por Câmera</h3>
+                
+                <div class="permission-guide">
+                    <strong>⚠️ Como usar:</strong><br>
+                    1. Clique em "Iniciar Câmera"<br>
+                    2. <strong>PERMITA</strong> o acesso à câmera quando o navegador solicitar<br>
+                    3. Aponte para o código<br>
+                    4. Clique em "Capturar Código"
+                </div>
+                
+                <div class="camera-container">
+                    <video id="videoSaida" autoplay playsinline></video>
+                    <div class="camera-overlay">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button onclick="startCamera('saida')" class="btn-success">🎥 Iniciar Câmera</button>
+                    <button onclick="stopCamera()" class="btn-danger">⏹️ Parar Câmera</button>
+                </div>
+                
+                <button onclick="captureCode('saida')" class="btn-warning">📸 Capturar Código</button>
+                
+                <div class="manual-input">
+                    <label>🔢 Ou digite o código manualmente:</label>
+                    <input type="text" id="codigoSaida" placeholder="Digite o código do produto" required>
+                    <button onclick="generateCode('saida')" class="btn-warning">
+                        🎲 Gerar Código Teste
+                    </button>
+                </div>
+            </div>
+            
+            <form id="formSaida">
+                <div class="form-group">
+                    <label for="quantidadeSaida">📦 Quantidade:</label>
+                    <input type="number" id="quantidadeSaida" required min="1" value="1">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span id="saidaText">📤 Registrar Saída</span>
+                    <span id="saidaLoading" class="loading" style="display:none"></span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Tab Cadastro -->
+        <div id="cadastro" class="tab-content">
+            <h2>➕ Cadastrar Produto</h2>
+            
+            <div class="scanner-section">
+                <h3>📷 Leitor por Câmera</h3>
+                
+                <div class="permission-guide">
+                    <strong>⚠️ Como usar:</strong><br>
+                    1. Clique em "Iniciar Câmera"<br>
+                    2. <strong>PERMITA</strong> o acesso à câmera quando o navegador solicitar<br>
+                    3. Aponte para o código<br>
+                    4. Clique em "Capturar Código"
+                </div>
+                
+                <div class="camera-container">
+                    <video id="videoCadastro" autoplay playsinline></video>
+                    <div class="camera-overlay">
+                        <div class="scan-line"></div>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button onclick="startCamera('cadastro')" class="btn-success">🎥 Iniciar Câmera</button>
+                    <button onclick="stopCamera()" class="btn-danger">⏹️ Parar Câmera</button>
+                </div>
+                
+                <button onclick="captureCode('cadastro')" class="btn-warning">📸 Capturar Código</button>
+                
+                <div class="manual-input">
+                    <label>🔢 Ou digite o código manualmente:</label>
+                    <input type="text" id="codigoBarras" placeholder="Digite o código do produto" required>
+                    <button onclick="generateCode('cadastro')" class="btn-warning">
+                        🎲 Gerar Código Teste
+                    </button>
+                </div>
+            </div>
+            
+            <form id="formCadastro">
+                <div class="form-group">
+                    <label for="nomeProduto">🏷️ Nome do Produto:</label>
+                    <input type="text" id="nomeProduto" required placeholder="Ex: Arroz Integral Camil 1kg">
+                </div>
+                <div class="form-group">
+                    <label for="categoria">📂 Categoria:</label>
+                    <select id="categoria">
+                        <option value="">Selecione...</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Limpeza">Limpeza</option>
+                        <option value="Higiene">Higiene</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="preco">💰 Preço (R$):</label>
+                    <input type="number" step="0.01" id="preco" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label for="estoqueMinimo">📊 Estoque Mínimo:</label>
+                    <input type="number" id="estoqueMinimo" value="5" min="0">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span id="cadastroText">💾 Cadastrar Produto</span>
+                    <span id="cadastroLoading" class="loading" style="display:none"></span>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Tab Consulta -->
+        <div id="consulta" class="tab-content">
+            <h2>🔍 Consultar Estoque</h2>
+            
+            <div class="form-group">
+                <input type="text" id="searchProduct" placeholder="🔎 Digite código, nome ou categoria...">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <button onclick="searchProducts()" class="btn-success">🔍 Buscar</button>
+                    <button onclick="loadAllProducts()" class="btn-primary">📋 Carregar Todos</button>
+                </div>
+            </div>
+            
+            <div id="productList" class="product-list"></div>
+        </div>
+        
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        // ================= CONFIGURAÇÃO =================
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCPdxT2kJf_0akrdy8pD8jafo61tBXbrxW8qnVMckGFxpGv0231Esa8xxzxb5nXRyO/exec';
+        
+        let produtos = JSON.parse(localStorage.getItem('estoque_produtos')) || [];
+        let currentTab = 'entrada';
+        let stream = null;
+        let currentCameraTab = null;
+
+        // ================= INICIALIZAÇÃO =================
+        document.addEventListener('DOMContentLoaded', function() {
+            testConnection();
+            loadAllProducts();
+            
+            if (produtos.length === 0) {
+                addSampleData();
+            }
+        });
+
+        // ================= SISTEMA DE CÂMERA SIMPLES =================
+        async function startCamera(tab) {
+            try {
+                stopCamera(); // Para câmera anterior
+                
+                currentCameraTab = tab;
+                const videoElement = document.getElementById(`video${tab.charAt(0).toUpperCase() + tab.slice(1)}`);
+                
+                if (!videoElement) {
+                    showMessage('❌ Elemento de vídeo não encontrado', 'error');
+                    return;
+                }
+
+                // Solicitar permissão de câmera
+                const constraints = {
+                    video: {
+                        facingMode: 'environment', // Câmera traseira
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                };
+
+                // REQUISIÇÃO DE PERMISSÃO - isso vai abrir o popup
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Conectar stream ao vídeo
+                videoElement.srcObject = stream;
+                
+                showMessage('✅ Câmera ativada! Aponte para o código e clique em "Capturar Código"', 'success');
+                
+            } catch (error) {
+                console.error('Erro câmera:', error);
+                
+                if (error.name === 'NotAllowedError') {
+                    showMessage('❌ Permissão da câmera negada. Clique no ícone de câmera na barra de endereço e permita o acesso.', 'error');
+                } else if (error.name === 'NotFoundError') {
+                    showMessage('❌ Nenhuma câmera encontrada neste dispositivo.', 'error');
+                } else if (error.name === 'NotSupportedError') {
+                    showMessage('❌ Seu navegador não suporta acesso à câmera.', 'error');
+                } else {
+                    showMessage('❌ Erro ao acessar câmera: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                stream = null;
+            }
+            
+            // Limpar todos os vídeos
+            document.querySelectorAll('video').forEach(video => {
+                video.srcObject = null;
+            });
+            
+            currentCameraTab = null;
+        }
+
+        function captureCode(tab) {
+            if (!stream) {
+                showMessage('❌ Inicie a câmera primeiro!', 'error');
+                return;
+            }
+
+            // Simular leitura - em produção você integraria uma biblioteca de leitura
+            const randomCode = 'PROD' + Math.floor(10000 + Math.random() * 90000);
+            
+            // Vibrar celular (se suportado)
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+            
+            // Preencher campo
+            if (tab === 'entrada') {
+                document.getElementById('codigoEntrada').value = randomCode;
+            } else if (tab === 'saida') {
+                document.getElementById('codigoSaida').value = randomCode;
+            } else if (tab === 'cadastro') {
+                document.getElementById('codigoBarras').value = randomCode;
+            }
+            
+            showMessage(`✅ Código capturado: ${randomCode}`, 'success');
+            
+            // Parar câmera após captura (opcional)
+            // stopCamera();
+        }
+
+        function generateCode(tab) {
+            const randomCode = 'PROD' + Math.floor(10000 + Math.random() * 90000);
+            
+            if (tab === 'entrada') {
+                document.getElementById('codigoEntrada').value = randomCode;
+            } else if (tab === 'saida') {
+                document.getElementById('codigoSaida').value = randomCode;
+            } else if (tab === 'cadastro') {
+                document.getElementById('codigoBarras').value = randomCode;
+            }
+            
+            showMessage(`🎲 Código gerado: ${randomCode}`, 'success');
+        }
+
+        // ================= CONEXÃO COM GOOGLE SHEETS =================
+        async function testConnection() {
+            const statusElement = document.getElementById('connectionStatus');
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: 'action=test&data={}'
+                });
+                
+                if (response.ok) {
+                    statusElement.textContent = '🟢 Conectado ao Google Sheets!';
+                    statusElement.className = 'connection-status connected';
+                } else {
+                    throw new Error('Resposta não OK');
+                }
+            } catch (error) {
+                statusElement.textContent = '🔴 Offline - Dados locais';
+                statusElement.className = 'connection-status disconnected';
+            }
+        }
+
+        async function callGoogleScript(action, data) {
+            try {
+                const formData = new FormData();
+                formData.append('action', action);
+                formData.append('data', JSON.stringify(data));
+                
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Erro na resposta');
+                
+                const result = await response.text();
+                return { success: true, data: result };
+                
+            } catch (error) {
+                return { 
+                    success: false, 
+                    error: error.message,
+                    localData: 'Dados salvos localmente.'
+                };
+            }
+        }
+
+        // ================= CONTROLE DE ABAS =================
+        function openTab(tabName) {
+            currentTab = tabName;
+            stopCamera();
+            
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+            
+            if (tabName === 'consulta') {
+                loadAllProducts();
+            }
+        }
+
+        // ================= GERENCIAMENTO DE DADOS =================
+        document.getElementById('formCadastro').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productData = {
+                codigo: document.getElementById('codigoBarras').value,
+                nome: document.getElementById('nomeProduto').value,
+                categoria: document.getElementById('categoria').value,
+                preco: parseFloat(document.getElementById('preco').value) || 0,
+                estoqueMinimo: parseInt(document.getElementById('estoqueMinimo').value) || 5,
+                estoqueAtual: 0,
+                dataCadastro: new Date().toLocaleString('pt-BR')
+            };
+
+            // Verificar se já existe
+            if (produtos.find(p => p.codigo === productData.codigo)) {
+                showMessage('❌ Produto já cadastrado!', 'error');
+                return;
+            }
+
+            // Tentar Google Sheets
+            const result = await callGoogleScript('cadastrarProduto', productData);
+            
+            if (result.success) {
+                produtos.push(productData);
+                salvarNoLocalStorage();
+                showMessage(`✅ "${productData.nome}" cadastrado no Google Sheets!`, 'success');
+                this.reset();
+            } else {
+                // Modo offline
+                produtos.push(productData);
+                salvarNoLocalStorage();
+                showMessage(`✅ "${productData.nome}" salvo localmente.`, 'info');
+                this.reset();
+            }
+            
+            if (currentTab === 'consulta') {
+                loadAllProducts();
+            }
+        });
+
+        document.getElementById('formEntrada').addEventListener('submit', function(e) {
+            e.preventDefault();
+            processarMovimentacao('entrada');
+        });
+
+        document.getElementById('formSaida').addEventListener('submit', function(e) {
+            e.preventDefault();
+            processarMovimentacao('saida');
+        });
+
+        async function processarMovimentacao(tipo) {
+            const codigo = tipo === 'entrada' 
+                ? document.getElementById('codigoEntrada').value 
+                : document.getElementById('codigoSaida').value;
+                
+            const quantidade = tipo === 'entrada'
+                ? parseInt(document.getElementById('quantidadeEntrada').value)
+                : parseInt(document.getElementById('quantidadeSaida').value);
+
+            // Encontrar produto
+            const produtoIndex = produtos.findIndex(p => p.codigo === codigo);
+            if (produtoIndex === -1) {
+                showMessage('❌ Produto não encontrado!', 'error');
+                return;
+            }
+
+            const produto = produtos[produtoIndex];
+
+            // Validar saída
+            if (tipo === 'saida' && produto.estoqueAtual < quantidade) {
+                showMessage(`❌ Estoque insuficiente! Disponível: ${produto.estoqueAtual}`, 'error');
+                return;
+            }
+
+            // Preparar dados
+            const movimentacaoData = {
+                codigo: codigo,
+                quantidade: quantidade,
+                tipo: tipo.toUpperCase(),
+                data: new Date().toLocaleString('pt-BR'),
+                produto: produto.nome
+            };
+
+            // Tentar Google Sheets
+            const result = await callGoogleScript('registrarMovimentacao', movimentacaoData);
+            
+            if (result.success) {
+                // Atualizar estoque
+                if (tipo === 'entrada') {
+                    produto.estoqueAtual += quantidade;
+                } else {
+                    produto.estoqueAtual -= quantidade;
+                }
+                
+                salvarNoLocalStorage();
+                showMessage(`✅ ${tipo} de ${quantidade} unidades registrada! Estoque: ${produto.estoqueAtual}`, 'success');
+            } else {
+                // Modo offline
+                if (tipo === 'entrada') {
+                    produto.estoqueAtual += quantidade;
+                } else {
+                    produto.estoqueAtual -= quantidade;
+                }
+                
+                salvarNoLocalStorage();
+                showMessage(`✅ ${tipo} de ${quantidade} unidades salva localmente. Estoque: ${produto.estoqueAtual}`, 'info');
+            }
+
+            // Limpar formulário
+            if (tipo === 'entrada') {
+                document.getElementById('formEntrada').reset();
+            } else {
+                document.getElementById('formSaida').reset();
+            }
+
+            if (currentTab === 'consulta') {
+                loadAllProducts();
+            }
+        }
+
+        // ================= CONSULTA =================
+        function loadAllProducts() {
+            displayProducts(produtos);
+        }
+
+        function searchProducts() {
+            const termo = document.getElementById('searchProduct').value.toLowerCase();
+            
+            if (!termo) {
+                loadAllProducts();
+                return;
+            }
+
+            const resultados = produtos.filter(p =>
+                p.codigo.includes(termo) ||
+                p.nome.toLowerCase().includes(termo) ||
+                (p.categoria && p.categoria.toLowerCase().includes(termo))
+            );
+
+            displayProducts(resultados);
+        }
+
+        function displayProducts(produtosArray) {
+            const lista = document.getElementById('productList');
+            
+            if (!produtosArray || produtosArray.length === 0) {
+                lista.innerHTML = '<div class="message info">Nenhum produto encontrado.</div>';
+                return;
+            }
+
+            lista.innerHTML = produtosArray.map(produto => `
+                <div class="product-item">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                        <div>
+                            <strong style="font-size: 18px;">${produto.nome}</strong>
+                            <div style="background: #3498db; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: inline-block; margin-left: 10px;">
+                                ${produto.codigo}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 16px; font-weight: bold; color: #27ae60;">
+                                R$ ${(produto.preco || 0).toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <strong>📂 Categoria:</strong> ${produto.categoria || 'Não informada'}
+                    </div>
+                    
+                    <div style="padding: 8px; border-radius: 4px; font-weight: bold; 
+                         background: ${produto.estoqueAtual < produto.estoqueMinimo ? '#f8d7da' : '#d4edda'}; 
+                         color: ${produto.estoqueAtual < produto.estoqueMinimo ? '#721c24' : '#155724'};">
+                        <strong>📊 Estoque:</strong> ${produto.estoqueAtual} unidades
+                        ${produto.estoqueMinimo ? `(Mínimo: ${produto.estoqueMinimo})` : ''}
+                        ${produto.estoqueAtual < produto.estoqueMinimo ? ' ⚠️' : ' ✅'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ================= UTILITÁRIOS =================
+        function salvarNoLocalStorage() {
+            localStorage.setItem('estoque_produtos', JSON.stringify(produtos));
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            
+            setTimeout(() => {
+                if (messageDiv.textContent === text) {
+                    messageDiv.textContent = '';
+                    messageDiv.className = 'message';
+                }
+            }, 4000);
+        }
+
+        function addSampleData() {
+            const sampleProducts = [
+                {
+                    codigo: "PROD001",
+                    nome: "Arroz Integral Camil 1kg",
+                    categoria: "Alimentos",
+                    preco: 8.90,
+                    estoqueMinimo: 10,
+                    estoqueAtual: 15
+                },
+                {
+                    codigo: "PROD002", 
+                    nome: "Feijão Carioca 1kg",
+                    categoria: "Alimentos",
+                    preco: 7.50,
+                    estoqueMinimo: 8,
+                    estoqueAtual: 5
+                }
+            ];
+
+            sampleProducts.forEach(produto => {
+                if (!produtos.find(p => p.codigo === produto.codigo)) {
+                    produtos.push(produto);
+                }
+            });
+
+            salvarNoLocalStorage();
+        }
+    </script>
+</body>
+</html>
